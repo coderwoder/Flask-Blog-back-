@@ -27,9 +27,15 @@ def home():
 def about():
     return render_template('about.html',title='About')
 
-@app.route("/login")
+@app.route("/login",methods=['POST','GET'])
 def login():
     form =LoginForm()
+    if form.validate_on_submit():
+        if form.email.data=='admin@123.com' and form.password.data=='admin':
+            flash(f'Login Successful! Welcome',category='success')
+            return redirect(url_for('home'))
+        else:
+            flash(f'Login Unsuccessful, please check your Email and Password',category='danger')
     return render_template('login.html',title='Login',form=form)
 
 @app.route("/register",methods=['GET','POST'])
