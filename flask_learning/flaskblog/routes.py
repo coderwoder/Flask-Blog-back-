@@ -1,0 +1,47 @@
+from flask import render_template,url_for,flash,redirect
+from flaskblog import app
+from flaskblog.forms import RegistrationForm, LoginForm
+
+posts = [
+    {
+        'author':'Dummy1',
+        'title':'What can i do with this?',
+        'content':'First content',
+        'date':'April, 2025'
+    },
+    {
+        'author':'Dummy2',
+        'title':'What cant i do with this?',
+        'content':'second content',
+        'date':'April, 2026'
+    }
+]
+
+@app.route("/")
+@app.route("/home")
+def home():
+    return render_template('home.html',posts=posts,title='Home')
+
+@app.route("/about")
+def about():
+    return render_template('about.html',title='About')
+
+@app.route("/login",methods=['POST','GET'])
+def login():
+    form =LoginForm()
+    if form.validate_on_submit():
+        if form.email.data=='admin@123.com' and form.password.data=='admin':
+            flash(f'Login Successful! Welcome',category='success')
+            return redirect(url_for('home'))
+        else:
+            flash(f'Login Unsuccessful, please check your Email and Password',category='danger')
+    return render_template('login.html',title='Login',form=form)
+
+@app.route("/register",methods=['GET','POST'])
+def register():
+    form=RegistrationForm()
+    if form.validate_on_submit():
+        flash(f'Account Created For {form.username.data}! ',category='success')
+        return redirect(url_for('home'))
+    return render_template('register.html',title='Register',form=form)
+
