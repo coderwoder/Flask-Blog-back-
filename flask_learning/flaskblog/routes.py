@@ -1,5 +1,7 @@
 from flask import render_template,url_for,flash,redirect
-from flaskblog import app
+from flaskblog import app,bcrypt,db,login_manager
+from flask_login import login_user,logout_user,current_user
+from flaskblog.models import User,Post
 from flaskblog.forms import RegistrationForm, LoginForm
 
 posts = [
@@ -28,10 +30,15 @@ def about():
 
 @app.route("/login",methods=['POST','GET'])
 def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('home'))
     form =LoginForm()
     if form.validate_on_submit():
-        if form.email.data=='admin@123.com' and form.password.data=='admin':
-            flash(f'Login Successful! Welcome',category='success')
+        user = User.query.filter_by(email=form.email.data).first()
+
+        if user and bcrypt.check_password_hash(user.password,form.password.data):
+            login_user(user,remember=form.remember.data)
+            flash(f'Login Successful! Welcome {user.username }',category='success')
             return redirect(url_for('home'))
         else:
             flash(f'Login Unsuccessful, please check your Email and Password',category='danger')
@@ -39,9 +46,19 @@ def login():
 
 @app.route("/register",methods=['GET','POST'])
 def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('home'))
     form=RegistrationForm()
     if form.validate_on_submit():
-        flash(f'Account Created For {form.username.data}! ',category='success')
-        return redirect(url_for('home'))
+        hashed_pw=bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+        user = User(username=form.username.data,password=hashed_pw,email=form.email.data)
+        db.session.add(user)
+        db.session.commit()
+        flash(f'Account Created For {form.username.data}! You can now Log in',category='success')
+        return redirect(url_for('login'))
     return render_template('register.html',title='Register',form=form)
 
+@app.route("/logout")
+def logout():
+   logout_user()
+   return redirect(url_for('home'))
