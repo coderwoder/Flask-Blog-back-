@@ -1,6 +1,16 @@
-from flaskblog import db
+from flaskblog import db,login_manager
 from datetime import datetime,timezone
-class User(db.Model):
+from flask_login import UserMixin
+
+#The class that you use to represent users needs to implement these properties and methods:
+# is_authenticated(),is_active(),is_anonymous(),get_id()
+# To make implementing a user class easier, you can inherit from UserMixin
+
+@login_manager.user_loader
+def load_user(user_id):         #simply fetches user it 'user_id', (is according to the docs-> flask_login) 
+    return User.query.get(int(user_id))
+
+class User(db.Model,UserMixin):
     id=db.Column(db.Integer,primary_key=True,)
     username=db.Column(db.String(20),unique=True,nullable=False)
     email=db.Column(db.String(150),unique=True,nullable=False)
