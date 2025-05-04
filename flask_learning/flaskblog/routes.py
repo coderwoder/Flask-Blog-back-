@@ -1,6 +1,6 @@
-from flask import render_template,url_for,flash,redirect
+from flask import render_template,url_for,flash,redirect,request
 from flaskblog import app,bcrypt,db,login_manager
-from flask_login import login_user,logout_user,current_user
+from flask_login import login_user,logout_user,current_user,login_required
 from flaskblog.models import User,Post
 from flaskblog.forms import RegistrationForm, LoginForm
 
@@ -35,11 +35,14 @@ def login():
     form =LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
-
         if user and bcrypt.check_password_hash(user.password,form.password.data):
             login_user(user,remember=form.remember.data)
-            flash(f'Login Successful! Welcome {user.username }',category='success')
-            return redirect(url_for('home'))
+            next_page= request.args.get('next') #args-> dict, hence better to accessed with get() then [k,v]; Will return None or a key 
+            print(next_page) 
+            flash(f'Login Successful! Welcome {user.username }',category='success') 
+            # if the user accesses the account page through URL it will redirect it to the 'account' 
+            # and if through normal login it will redirect it to the home page.
+            return redirect(next_page) if next_page else redirect(url_for('home')) 
         else:
             flash(f'Login Unsuccessful, please check your Email and Password',category='danger')
     return render_template('login.html',title='Login',form=form)
@@ -62,3 +65,8 @@ def register():
 def logout():
    logout_user()
    return redirect(url_for('home'))
+
+@app.route("/account")
+@login_required
+def account():
+    return render_template('account.html',title='Account')
